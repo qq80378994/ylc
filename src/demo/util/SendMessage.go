@@ -1,11 +1,30 @@
 package util
 
 import (
+	"bufio"
 	"bytes"
 	"compress/zlib"
 	"encoding/binary"
 	"net"
 )
+
+func ReceiveHead(dataInputStream *bufio.Reader) byte {
+	bytes := make([]byte, 1)
+	_, err := dataInputStream.Read(bytes)
+	if err != nil {
+		// 处理异常
+	}
+	return bytes[0]
+}
+
+func readByte(dataInputStream *bytes.Buffer) (byte, error) {
+	var b uint8
+	err := binary.Read(dataInputStream, binary.BigEndian, &b)
+	if err != nil {
+		return 0, err
+	}
+	return b, nil
+}
 
 func Send(head byte, context []byte, conn net.Conn) {
 	var buffer bytes.Buffer
