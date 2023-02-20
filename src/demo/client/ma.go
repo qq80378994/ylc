@@ -150,7 +150,7 @@ func doSomeThing(socket net.Conn) {
 		case string(1):
 
 			for {
-				time.Sleep(time.Second * 50)
+				time.Sleep(time.Second * 1)
 				// 获取当前屏幕的大小
 				screenWidth, screenHeight := robotgo.GetScreenSize()
 
@@ -183,7 +183,7 @@ func doSomeThing(socket net.Conn) {
 				}
 				//// 将 buffer 转换为 byte 数组
 				byteArray := buffer.Bytes()
-				util.Send(1, byteArray, socket)
+				util.Send(2, byteArray, socket)
 			}
 
 		}
