@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/go-vgo/robotgo"
+
 	"image/png"
 	"net"
 	"os"
@@ -123,8 +124,9 @@ func createScreen(socket net.Conn) {
 		//// 将 buffer 转换为 byte 数组
 		byteArray := buffer.Bytes()
 		fmt.Println(len(byteArray))
-		compress := util.Compress(byteArray)
-		util.Send(2, compress, socket)
+		//compress := util.Compress(byteArray)
+		//fmt.Println(len(compress))
+		util.Send(2, byteArray, socket)
 		fmt.Println("发送成功")
 	}
 }
@@ -142,9 +144,9 @@ func doSomeThing(socket net.Conn) {
 		case string(0):
 			fmt.Println("heart...")
 
-			//屏幕监控
-			//case string(1):
-			//	go createScreen(socket)
+		//屏幕监控
+		case string(1):
+			go createScreen(socket)
 		}
 	}
 	wg.Done() // 协程计数器加-1

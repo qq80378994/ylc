@@ -37,39 +37,38 @@ func readByte(dataInputStream *bytes.Buffer) (byte, error) {
 	return b, nil
 }
 
-//
-//func Send(head byte, context []byte, conn net.Conn) {
-//	var buffer bytes.Buffer
-//	writer := zlib.NewWriter(&buffer)
-//	writer.Write(context)
-//	writer.Close()
-//	data := buffer.Bytes()
-//
-//	length := uint16(len(data))
-//	header := []byte{head, byte(length >> 8), byte(length)}
-//	packet := append(header, data...)
-//
-//	conn.Write(packet)
-//}
+func Send(head byte, context []byte, conn net.Conn) {
+	var buffer bytes.Buffer
+	writer := zlib.NewWriter(&buffer)
+	writer.Write(context)
+	writer.Close()
+	data := buffer.Bytes()
 
-func Send(head byte, context []byte, socket net.Conn) {
-	compressedData, err := compress(context)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	header := createHeader(head, len(compressedData))
-	_, err = socket.Write(header)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	_, err = socket.Write(compressedData)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	length := uint16(len(data))
+	header := []byte{head, byte(length >> 8), byte(length)}
+	packet := append(header, data...)
+
+	conn.Write(packet)
 }
+
+//func Send(head byte, context []byte, socket net.Conn) {
+//	compressedData, err := compress(context)
+//	if err != nil {
+//		fmt.Println(err)
+//		return
+//	}
+//	header := createHeader(head, len(compressedData))
+//	_, err = socket.Write(header)
+//	if err != nil {
+//		fmt.Println(err)
+//		return
+//	}
+//	_, err = socket.Write(compressedData)
+//	if err != nil {
+//		fmt.Println(err)
+//		return
+//	}
+//}
 
 func createHeader(head byte, length int) []byte {
 	header := make([]byte, 3)
