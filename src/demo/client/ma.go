@@ -5,10 +5,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/go-vgo/robotgo"
-
-	"image/png"
+	"image/jpeg"
 	"net"
-	"os"
 	"runtime"
 	"strconv"
 	"sync"
@@ -88,49 +86,50 @@ func connectNew() {
 	fmt.Println("abc========================")
 
 }
+
 func createScreen(socket net.Conn) {
 	// 获取当前屏幕的大小
-	screenWidth, screenHeight := robotgo.GetScreenSize()
+
 	util.SendHead(1, socket)
 	for {
-		time.Sleep(time.Millisecond * 300)
-		// 获取当前屏幕的截图
-		bitmap := robotgo.CaptureScreen(0, 0, screenWidth, screenHeight)
+		time.Sleep(time.Millisecond * 3000)
 
-		// 将截图转换为Image对象
-		img := robotgo.ToImage(bitmap)
-
-		// 创建一个PNG文件，并将Image对象保存到文件中
-		file, err := os.Create("output.png")
+		screen, err := CaptureScreenAsJPEG(80)
 		if err != nil {
-			fmt.Println("创建文件失败：", err)
-			return
+			fmt.Println(err)
 		}
-		defer file.Close()
-
-		if err := png.Encode(file, img); err != nil {
-			fmt.Println("保存失败：", err)
-			return
-		}
-		fmt.Println("图片保存成功..")
-		// 创建一个 bytes.Buffer 对象
-		buffer := new(bytes.Buffer)
-		// 将截图编码为 PNG 格式并写入 buffer 中
-
-		err = png.Encode(buffer, img)
-		if err != nil {
-			panic(err)
-		}
-		//// 将 buffer 转换为 byte 数组
-		byteArray := buffer.Bytes()
-		fmt.Println(len(byteArray))
-		//compress := util.Compress(byteArray)
-		//fmt.Println(len(compress))
-		util.Send(2, byteArray, socket)
+		compress := util.Compress(screen)
+		fmt.Println(len(compress))
+		util.Send(2, compress, socket)
 		fmt.Println("发送成功")
 	}
 }
 
+// CaptureScreenAsJPEG 截图并返回JPEG格式的字节数组
+func CaptureScreenAsJPEG(quality int) ([]byte, error) {
+	// 获取屏幕的尺寸
+	screenX, screenY := robotgo.GetScreenSize()
+	// 创建一个矩形，表示要截取的区域
+	// 截取屏幕区域
+	bitmap := robotgo.CaptureScreen(0, 0, screenX, screenY)
+	// 释放内存
+	defer robotgo.FreeBitmap(bitmap)
+	// 转换为图片对象
+	img := robotgo.ToImage(bitmap)
+
+	// 设置JPEG压缩参数
+	var opt jpeg.Options
+	opt.Quality = quality
+
+	// 编码为JPEG格式
+	buf := new(bytes.Buffer)
+	err := jpeg.Encode(buf, img, &opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
 func doSomeThing(socket net.Conn) {
 	for {
 		fmt.Println("abc")
