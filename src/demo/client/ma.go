@@ -98,9 +98,9 @@ func createScreen(socket net.Conn) {
 		if err != nil {
 			fmt.Println(err)
 		}
-		compress := util.Compress(screen)
-		fmt.Println(len(compress))
-		util.Send(2, compress, socket)
+		////compress := util.Compress(screen)
+		fmt.Println(len(screen))
+		util.Send(2, screen, socket)
 		fmt.Println("发送成功")
 	}
 }
