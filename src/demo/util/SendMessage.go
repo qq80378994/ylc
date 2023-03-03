@@ -3,20 +3,19 @@ package util
 import (
 	"bufio"
 	"bytes"
-	"compress/gzip"
 	"compress/zlib"
 	"encoding/binary"
 	"fmt"
 	"net"
 )
 
-func Compress(context []byte) []byte {
-	var buffer bytes.Buffer
-	gzipWriter := gzip.NewWriter(&buffer)
-	gzipWriter.Write(context)
-	gzipWriter.Close()
-	return buffer.Bytes()
-}
+//func Compress(context []byte) []byte {
+//	var buffer bytes.Buffer
+//	gzipWriter := gzip.NewWriter(&buffer)
+//	gzipWriter.Write(context)
+//	gzipWriter.Close()
+//	return buffer.Bytes()
+//}
 
 func ReceiveHead(dataInputStream *bufio.Reader) byte {
 	bytes := make([]byte, 1)
@@ -28,69 +27,51 @@ func ReceiveHead(dataInputStream *bufio.Reader) byte {
 	return bytes[0]
 }
 
-func readByte(dataInputStream *bytes.Buffer) (byte, error) {
-	var b uint8
-	err := binary.Read(dataInputStream, binary.BigEndian, &b)
+func ToByte(head byte, length int, context []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	err := buf.WriteByte(head)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return b, nil
+
+	lengthBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(lengthBytes, uint32(length))
+
+	_, err = buf.Write(lengthBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = buf.Write(context)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 func Send(head byte, context []byte, conn net.Conn) {
-	var buffer bytes.Buffer
-	writer := zlib.NewWriter(&buffer)
-	writer.Write(context)
-	writer.Close()
-	data := buffer.Bytes()
+	//compressed := compress(context)
+	fmt.Println(len(context))
+	bytes, err := ToByte(head, len(context), context)
+	if err != nil {
+		fmt.Println("Error converting to bytes:", err)
+		return
+	}
 
-	length := uint16(len(data))
-	header := []byte{head, byte(length >> 8), byte(length)}
-	packet := append(header, data...)
-
-	conn.Write(packet)
+	_, err = conn.Write(bytes)
+	if err != nil {
+		fmt.Println("Error sending data:", err)
+		return
+	}
 }
 
-//func Send(head byte, context []byte, socket net.Conn) {
-//	compressedData, err := compress(context)
-//	if err != nil {
-//		fmt.Println(err)
-//		return
-//	}
-//	header := createHeader(head, len(compressedData))
-//	_, err = socket.Write(header)
-//	if err != nil {
-//		fmt.Println(err)
-//		return
-//	}
-//	_, err = socket.Write(compressedData)
-//	if err != nil {
-//		fmt.Println(err)
-//		return
-//	}
-//}
-
-func createHeader(head byte, length int) []byte {
-	header := make([]byte, 3)
-	header[0] = head
-	binary.BigEndian.PutUint16(header[1:], uint16(length))
-	return header
-}
-func compress(data []byte) ([]byte, error) {
+func compress(data []byte) []byte {
 	var buf bytes.Buffer
-	compressor, err := zlib.NewWriterLevel(&buf, zlib.BestCompression)
-	if err != nil {
-		return nil, err
-	}
-	_, err = compressor.Write(data)
-	if err != nil {
-		return nil, err
-	}
-	err = compressor.Close()
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+	zw := zlib.NewWriter(&buf)
+	zw.Write(data)
+	zw.Close()
+	return buf.Bytes()
 }
 
 func SendHead(head byte, socket net.Conn) {
@@ -99,11 +80,4 @@ func SendHead(head byte, socket net.Conn) {
 	if err != nil {
 		fmt.Println(err)
 	}
-}
-func ToByte(args ...interface{}) []byte {
-	var buffer bytes.Buffer
-	for _, arg := range args {
-		binary.Write(&buffer, binary.LittleEndian, arg)
-	}
-	return buffer.Bytes()
 }
