@@ -9,14 +9,6 @@ import (
 	"net"
 )
 
-//func Compress(context []byte) []byte {
-//	var buffer bytes.Buffer
-//	gzipWriter := gzip.NewWriter(&buffer)
-//	gzipWriter.Write(context)
-//	gzipWriter.Close()
-//	return buffer.Bytes()
-//}
-
 func ReceiveHead(dataInputStream *bufio.Reader) byte {
 	bytes := make([]byte, 1)
 	_, err := dataInputStream.Read(bytes)

