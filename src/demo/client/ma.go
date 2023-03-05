@@ -54,6 +54,7 @@ func connectNew() {
 
 	wg.Add(2) // 协程计数器 +1
 	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", "qq80378994.e2.luyouxia.net:28602")
+	fmt.Println(inetSocketAddress)
 	socket, err := net.DialTCP("tcp", nil, inetSocketAddress)
 	if err != nil {
 		fmt.Println(err)
@@ -76,7 +77,7 @@ func connectNew() {
 	fmt.Fprintln(dataOutputStream, "360")
 
 	dataOutputStream.Flush()
-	// // 协程计数器加-1
+	// 协程计数器加-1
 	go doSomeThing(socket)
 	go heartbeat(socket, time.Second)
 
