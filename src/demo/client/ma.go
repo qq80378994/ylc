@@ -50,7 +50,7 @@ func heartbeat(conn net.Conn) {
 func connectNew() {
 
 	wg.Add(2) // 协程计数器 +1
-	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:1011")
+	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", "selectbyylc.e4.luyouxia.net:43083")
 	socket, err := net.DialTCP("tcp", nil, inetSocketAddress)
 	if err != nil {
 		fmt.Println(err)
