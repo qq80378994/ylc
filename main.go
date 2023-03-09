@@ -1,8 +1,6 @@
 package main
 
-import (
-	"ylc/src/demo/client"
-)
+import "ylc/src/demo/client"
 
 const (
 	APP_NAME        = "myapp"              // 注册表中的键名

