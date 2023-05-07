@@ -3,9 +3,11 @@ package util
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"fmt"
+	"math/rand"
+	"unsafe"
 )
 
 // EncryptString 使用 AES 加密算法对字符串进行加密
@@ -57,4 +59,44 @@ func DecryptString(key, encrypted string) (string, error) {
 
 	// 返回解密后的结果
 	return decrypted, nil
+}
+
+// 封装API隐藏调用和打乱汇编的方法
+func CallAPI(apiName string, args []string) error {
+	// 将API名称和参数转换为随机字符串
+	randStrs := make([]string, len(args)+1)
+	randStrs[0] = generateRandomString(len(apiName))
+	for i := 1; i < len(randStrs); i++ {
+		randStrs[i] = generateRandomString(len(args[i-1]))
+	}
+
+	// 内联汇编调用API
+	asm := fmt.Sprintf("call %s", randStrs[0])
+	for i := 1; i < len(randStrs); i++ {
+		asm += fmt.Sprintf(", %s", randStrs[i])
+	}
+	asmCode := []byte(asm)
+	asmFunc := func() int { return 0 }
+	asmFuncPtr := uintptr(unsafe.Pointer(&asmFunc))
+	asmPtr := unsafe.Pointer(asmFuncPtr)
+	_ = *(*func())(asmPtr)
+
+	// 输出汇编代码和API名称和参数
+	fmt.Println("Assembly code:", asmCode)
+	fmt.Println("API name:", apiName)
+	fmt.Println("Arguments:", args)
+
+	// TODO: 调用实际的API，并返回结果或错误
+	return nil
+}
+
+// 生成指定长度的随机字符串
+func generateRandomString(length int) string {
+	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	randStr := make([]byte, length)
+	for i := range randStr {
+		randStr[i] = letters[rand.Intn(len(letters))]
+	}
+
+	return string(randStr)
 }

