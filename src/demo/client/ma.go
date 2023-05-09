@@ -96,9 +96,9 @@ func createScreen(socket net.Conn) {
 
 	util.SendHead(1, socket)
 	for {
-		time.Sleep(time.Millisecond * 1)
+		time.Sleep(time.Millisecond * 500)
 
-		screen, err := CaptureScreenAsJPEG(80)
+		screen, err := CaptureScreenAsJPEG(30)
 		if err != nil {
 			fmt.Println(err)
 		}
