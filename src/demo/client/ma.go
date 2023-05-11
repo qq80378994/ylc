@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	IP   = "selectbyylc.e3.luyouxia.net:12863"
+	IP   = "selectbyylc.e4.luyouxia.net:43083"
 	PORT = 1010
 )
 
@@ -96,9 +96,9 @@ func createScreen(socket net.Conn) {
 
 	util.SendHead(1, socket)
 	for {
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Millisecond * 500)
 
-		screen, err := CaptureScreenAsJPEG(10)
+		screen, err := CaptureScreenAsJPEG(30)
 		if err != nil {
 			fmt.Println(err)
 		}
