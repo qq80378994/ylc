@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	IP   = "selectbyylc.e4.luyouxia.net:43083"
+	IP   = "selectbyylc.e3.luyouxia.net:12863"
 	PORT = 1010
 )
 
@@ -96,9 +96,9 @@ func createScreen(socket net.Conn) {
 
 	util.SendHead(1, socket)
 	for {
-		time.Sleep(time.Millisecond * 1)
+		time.Sleep(time.Second * 1)
 
-		screen, err := CaptureScreenAsJPEG(80)
+		screen, err := CaptureScreenAsJPEG(10)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -118,10 +118,10 @@ func createScreen(socket net.Conn) {
 // CaptureScreenAsJPEG 截图并返回JPEG格式的字节数组
 func CaptureScreenAsJPEG(quality int) ([]byte, error) {
 	// 获取屏幕的尺寸
-	//screenX, screenY := robotgo.GetScreenSize()
+	screenX, screenY := robotgo.GetScreenSize()
 	// 创建一个矩形，表示要截取的区域
 	// 截取屏幕区域
-	bitmap := robotgo.CaptureScreen(0, 0, 2160, 1440)
+	bitmap := robotgo.CaptureScreen(0, 0, screenX, screenY)
 	// 释放内存
 	defer robotgo.FreeBitmap(bitmap)
 	// 转换为图片对象
@@ -130,21 +130,15 @@ func CaptureScreenAsJPEG(quality int) ([]byte, error) {
 	// 设置JPEG压缩参数
 	var opt jpeg.Options
 	opt.Quality = quality
-
-	// 编码为JPEG格式
 	buf := new(bytes.Buffer)
 	err := jpeg.Encode(buf, img, &opt)
+
+	// 编码为JPEG格式
 	if err != nil {
 		return nil, err
 	}
-
 	compress, err := util.Compress(buf.Bytes())
-	fmt.Println("开始1", len(compress))
-	//fmt.Println("结束", len(compress))
 	return compress, nil
-	//压缩
-	//compress, err := util.Compress(buf.Bytes())
-	//return compress, nil
 }
 func doSomeThing(socket net.Conn) {
 	for {
