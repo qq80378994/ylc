@@ -8,30 +8,31 @@ import (
 
 func MousePress(s string) {
 	button := getMouseClick(s)
-	robotgo.MouseToggle("down", button)
+	robotgo.Toggle("down", button)
 }
 
 func MouseRelease(s string) {
 	button := getMouseClick(s)
-	robotgo.MouseToggle("up", button)
+	robotgo.Toggle("up", button)
 }
 
 func MouseMove(s string) {
 	x, y := getMousePos(s)
-	robotgo.MoveMouseSmooth(x, y)
+	robotgo.MoveSmooth(x, y)
 }
 
-func getMouseClick(s string) uint32 {
+func getMouseClick(s string) string {
 	button, err := strconv.Atoi(s)
 	if err != nil {
-		return 0
+		return ""
 	}
 	if button == 1 {
-		return robotgo.LeftButton
-	} else if button == 3 {
-		return robotgo.RightButton
+
+		return "left"
+	} else if button == 2 {
+		return "right"
 	}
-	return 0
+	return ""
 }
 
 func getMousePos(s string) (int, int) {

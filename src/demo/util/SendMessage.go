@@ -6,10 +6,24 @@ import (
 	"compress/zlib"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"net"
 )
 
 var HEART = 99
+
+func ReceiveLength(r io.Reader) (int, error) {
+	var length uint32
+	err := binary.Read(r, binary.BigEndian, &length)
+	return int(length), err
+}
+
+// 从给定的读取器中读取给定长度的消息，并将其作为字节切片返回。
+func ReceiveContext(r io.Reader, length int) ([]byte, error) {
+	context := make([]byte, length)
+	_, err := io.ReadFull(r, context)
+	return context, err
+}
 
 func ReceiveHead(dataInputStream *bufio.Reader) (byte, error) {
 	bytes := make([]byte, 1)

@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"ylc/src/demo/MyConst"
 	"ylc/src/demo/util"
 )
 
@@ -160,7 +161,12 @@ func doSomeThing(socket net.Conn) {
 			go createScreen(socket)
 		case string(3):
 			stopScreen = true
+		case string(MyConst.MOUSE_PRESSED):
+			length, _ := util.ReceiveLength(socket)
+			context, _ := util.ReceiveContext(socket, length)
+			util.MousePress(string(context))
 		}
+
 	}
 	wg.Done() // 协程计数器加-1
 
