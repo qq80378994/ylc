@@ -1,12 +1,14 @@
 package util
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/go-vgo/robotgo"
 )
 
 func MousePress(s string) {
+	fmt.Println("鼠标点击了===》", s)
 	button := getMouseClick(s)
 	robotgo.Toggle("down", button)
 }

@@ -3,7 +3,6 @@ package util
 import (
 	"bufio"
 	"bytes"
-	"compress/zlib"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -12,19 +11,37 @@ import (
 
 var HEART = 99
 
-func ReceiveLength(r io.Reader) (int, error) {
-	var length uint32
-	err := binary.Read(r, binary.BigEndian, &length)
-	return int(length), err
+func ByteToInt(byte []byte) int {
+	bytesBuffer := bytes.NewBuffer(byte)
+	var x int32
+	binary.Read(bytesBuffer, binary.BigEndian, &x)
+	return int(x)
 }
 
-// 从给定的读取器中读取给定长度的消息，并将其作为字节切片返回。
-func ReceiveContext(r io.Reader, length int) ([]byte, error) {
-	context := make([]byte, length)
-	_, err := io.ReadFull(r, context)
-	return context, err
+func ReceiveContext(dataInputStream io.Reader, len int) ([]byte, error) {
+	bytes := make([]byte, len)
+	_, err := io.ReadFull(dataInputStream, bytes)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	b, err := Decompression(bytes)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	return b, nil
 }
-
+func ReceiveLength(dataInputStream io.Reader) int {
+	bytes := make([]byte, 4)
+	_, err := dataInputStream.Read(bytes)
+	if err != nil {
+		// 处理错误
+		fmt.Println(err)
+	}
+	len := ByteToInt(bytes)
+	return len
+}
 func ReceiveHead(dataInputStream *bufio.Reader) (byte, error) {
 	bytes := make([]byte, 1)
 	_, err := dataInputStream.Read(bytes)
@@ -72,14 +89,6 @@ func Send(head byte, context []byte, conn net.Conn) error {
 		fmt.Println("Error sending data:", err)
 	}
 	return err
-}
-
-func compress(data []byte) []byte {
-	var buf bytes.Buffer
-	zw := zlib.NewWriter(&buf)
-	zw.Write(data)
-	zw.Close()
-	return buf.Bytes()
 }
 
 func SendHead(head byte, socket net.Conn) error {

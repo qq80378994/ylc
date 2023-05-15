@@ -20,8 +20,7 @@ import (
 )
 
 const (
-	IP   = "selectbyylc.e4.luyouxia.net:43083"
-	PORT = 1010
+	IP = "selectbyylc.e4.luyouxia.net:43083"
 )
 
 const (
@@ -109,7 +108,7 @@ func createScreen(socket net.Conn) {
 		if err != nil {
 			return
 		}
-		fmt.Println("发送成功")
+
 		if stopScreen {
 			break
 		}
@@ -162,9 +161,14 @@ func doSomeThing(socket net.Conn) {
 		case string(3):
 			stopScreen = true
 		case string(MyConst.MOUSE_PRESSED):
-			length, _ := util.ReceiveLength(socket)
+			length := util.ReceiveLength(socket)
 			context, _ := util.ReceiveContext(socket, length)
 			util.MousePress(string(context))
+		case string(MyConst.MOUSE_MOVED):
+			length := util.ReceiveLength(socket)
+			fmt.Println("this length:", length)
+			context, _ := util.ReceiveContext(socket, length)
+			util.MouseMove(string(context))
 		}
 
 	}
