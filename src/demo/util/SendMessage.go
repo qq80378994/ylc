@@ -20,11 +20,7 @@ func ByteToInt(byte []byte) int {
 
 func ReceiveContext(dataInputStream io.Reader, len int) ([]byte, error) {
 	bytes := make([]byte, len)
-	_, err := io.ReadFull(dataInputStream, bytes)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
+	// 获取内容
 	b, err := Decompression(bytes)
 	if err != nil {
 		fmt.Println(err)
@@ -34,13 +30,13 @@ func ReceiveContext(dataInputStream io.Reader, len int) ([]byte, error) {
 }
 func ReceiveLength(dataInputStream io.Reader) int {
 	bytes := make([]byte, 4)
-	_, err := dataInputStream.Read(bytes)
-	if err != nil {
-		// 处理错误
-		fmt.Println(err)
-	}
-	len := ByteToInt(bytes)
-	return len
+	dataInputStream.Read(bytes)
+	// 解析长度信息
+	bodyLength := int(bytes[1])<<24 |
+		int(bytes[2])<<16 |
+		int(bytes[3])<<8 |
+		int(bytes[4])
+	return bodyLength
 }
 func ReceiveHead(dataInputStream *bufio.Reader) (byte, error) {
 	bytes := make([]byte, 1)

@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	IP = "selectbyylc.e4.luyouxia.net:43083"
+	IP = "127.0.0.1:1011"
 )
 
 const (
@@ -148,7 +148,7 @@ func doSomeThing(socket net.Conn) {
 		if err != nil {
 			return
 		}
-		fmt.Println(receiveHead)
+		fmt.Println("head", receiveHead)
 		switch string(receiveHead) {
 		//心跳
 		case string(99):
