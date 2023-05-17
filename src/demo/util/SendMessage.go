@@ -28,15 +28,16 @@ func ReceiveContext(dataInputStream io.Reader, len int) ([]byte, error) {
 	}
 	return b, nil
 }
-func ReceiveLength(dataInputStream io.Reader) int {
+func ReceiveLength(dataInputStream *bufio.Reader) int {
 	bytes := make([]byte, 4)
-	dataInputStream.Read(bytes)
-	// 解析长度信息
-	bodyLength := int(bytes[1])<<24 |
-		int(bytes[2])<<16 |
-		int(bytes[3])<<8 |
-		int(bytes[4])
-	return bodyLength
+	_, err := dataInputStream.Read(bytes)
+	if err != nil {
+
+		fmt.Println(err)
+		// 处理异常
+	}
+	length := ByteToInt(bytes)
+	return length
 }
 func ReceiveHead(dataInputStream *bufio.Reader) (byte, error) {
 	bytes := make([]byte, 1)
