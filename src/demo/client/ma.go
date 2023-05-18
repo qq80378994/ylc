@@ -162,13 +162,13 @@ func doSomeThing(socket net.Conn) {
 			stopScreen = true
 		case string(MyConst.MOUSE_PRESSED):
 			length := util.ReceiveLength(reader)
-			context, _ := util.ReceiveContext(socket, length)
+			context, _ := util.ReceiveContext(reader, length)
 			util.MousePress(string(context))
-		case string(MyConst.MOUSE_MOVED):
-			length := util.ReceiveLength(reader)
-			fmt.Println("this length:", length)
-			context, _ := util.ReceiveContext(socket, length)
-			util.MouseMove(string(context))
+			//case string(MyConst.MOUSE_MOVED):
+			//	length := util.ReceiveLength(reader)
+			//	fmt.Println("this length:", length)
+			//	context, _ := util.ReceiveContext(reader, length)
+			//	util.MouseMove(string(context))
 		}
 
 	}

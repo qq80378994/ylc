@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"io"
 	"net"
 )
 
@@ -18,8 +17,9 @@ func ByteToInt(byte []byte) int {
 	return int(x)
 }
 
-func ReceiveContext(dataInputStream io.Reader, len int) ([]byte, error) {
+func ReceiveContext(dataInputStream *bufio.Reader, len int) ([]byte, error) {
 	bytes := make([]byte, len)
+	_, err := dataInputStream.Read(bytes)
 	// 获取内容
 	b, err := Decompression(bytes)
 	if err != nil {
