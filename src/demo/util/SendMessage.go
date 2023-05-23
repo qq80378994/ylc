@@ -5,10 +5,32 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"net"
 )
 
 var HEART = 99
+
+func ReadPacket(conn net.Conn) ([]byte, error) {
+	// 先读取 4 字节，该部分包含了整个数据包的长度
+	lengthBytes := make([]byte, 4)
+	_, err := io.ReadFull(conn, lengthBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	// 解析出数据包的长度
+	packetLength := int(binary.BigEndian.Uint32(lengthBytes))
+
+	// 读取剩余的数据包内容
+	packetBytes := make([]byte, packetLength)
+	_, err = io.ReadFull(conn, packetBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return packetBytes, nil
+}
 
 func ByteToInt(byte []byte) int {
 	bytesBuffer := bytes.NewBuffer(byte)

@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	IP = "127.0.0.1:1011"
+	IP = "selectbyylc.e4.luyouxia.net:43083"
 )
 
 const (
@@ -164,11 +164,31 @@ func doSomeThing(socket net.Conn) {
 			length := util.ReceiveLength(reader)
 			context, _ := util.ReceiveContext(reader, length)
 			util.MousePress(string(context))
-			//case string(MyConst.MOUSE_MOVED):
-			//	length := util.ReceiveLength(reader)
-			//	fmt.Println("this length:", length)
-			//	context, _ := util.ReceiveContext(reader, length)
-			//	util.MouseMove(string(context))
+		case string(MyConst.MOUSE_MOVED):
+			length := util.ReceiveLength(reader)
+			fmt.Println("this length:", length)
+			context, _ := util.ReceiveContext(reader, length)
+			util.MouseMove(string(context))
+		case string(MyConst.MOUSE_RELEASED):
+			length := util.ReceiveLength(reader)
+			context, _ := util.ReceiveContext(reader, length)
+			util.MouseRelease(string(context))
+		case string(MyConst.MOUSE_DRAGGED):
+			length := util.ReceiveLength(reader)
+			context, _ := util.ReceiveContext(reader, length)
+			util.MouseDragged(string(context))
+		case string(MyConst.MOUSE_WHEEL):
+			length := util.ReceiveLength(reader)
+			context, _ := util.ReceiveContext(reader, length)
+			util.MouseWheel(string(context))
+		case string(MyConst.KEY_PRESSED):
+			length := util.ReceiveLength(reader)
+			context, _ := util.ReceiveContext(reader, length)
+			util.KeyPress(string(context))
+		case string(MyConst.KEY_RELEASED):
+			length := util.ReceiveLength(reader)
+			context, _ := util.ReceiveContext(reader, length)
+			util.KeyReleased(string(context))
 		}
 
 	}

@@ -7,15 +7,44 @@ import (
 	"github.com/go-vgo/robotgo"
 )
 
+func KeyReleased(s string) {
+	fmt.Println("释放===》", s)
+	robotgo.KeyToggle(s, "up")
+}
+
+func KeyPress(s string) {
+
+	uMap := robotgo.Keycode
+	keyname := getKeyByValue(s, uMap)
+	fmt.Println("按下===》", keycode)
+	robotgo.KeyToggle(keycode, "down")
+}
+
+func MouseWheel(s string) {
+	i, _ := strconv.Atoi(s)
+	fmt.Println("滑轮===》", i)
+	robotgo.Scroll(0, i)
+}
 func MousePress(s string) {
 	fmt.Println("鼠标点击了===》", s)
+
 	button := getMouseClick(s)
-	robotgo.Toggle("down", button)
+	robotgo.MouseToggle("down", button)
+	//robotgo.Click(button, true)
+
+}
+
+func MouseDragged(s string) {
+	fmt.Println("鼠标拖拽了===》", s)
+	button := getMouseClick(s)
+	robotgo.MouseToggle("down", button)
 }
 
 func MouseRelease(s string) {
+	fmt.Println("鼠标释放了")
 	button := getMouseClick(s)
-	robotgo.Toggle("up", button)
+	robotgo.MouseToggle("up", button)
+	//robotgo.Click(button, false)
 }
 
 func MouseMove(s string) {
@@ -31,7 +60,7 @@ func getMouseClick(s string) string {
 	if button == 1 {
 
 		return "left"
-	} else if button == 2 {
+	} else if button == 3 {
 		return "right"
 	}
 	return ""
@@ -61,7 +90,15 @@ func subIndex(s string, substr string) int {
 	}
 	return index
 }
-
+func getKeyByValue(m map[string]int, v int) string {
+	for k, val := range m {
+		if val == v {
+			return k
+		}
+	}
+	// 如果没有找到匹配的键，则返回空字符串
+	return ""
+}
 func main() {
 	// test for MousePress and MouseRelease functions
 	MousePress("1")
