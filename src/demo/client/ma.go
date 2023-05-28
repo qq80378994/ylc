@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	IP = "selectbyylc.e4.luyouxia.net:43083"
+	IP = "127.0.0.1:1011"
 )
 
 const (

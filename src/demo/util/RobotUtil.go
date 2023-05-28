@@ -3,8 +3,16 @@ package util
 import (
 	"fmt"
 	"strconv"
+	"syscall"
+	"unsafe"
 
 	"github.com/go-vgo/robotgo"
+)
+
+// 导入Windows API
+var (
+	user32DLL       = syscall.NewLazyDLL("user32.dll")
+	getKeyNameTextW = user32DLL.NewProc("GetKeyNameTextW")
 )
 
 func KeyReleased(s string) {
@@ -14,10 +22,14 @@ func KeyReleased(s string) {
 
 func KeyPress(s string) {
 
-	uMap := robotgo.Keycode
-	keyname := getKeyByValue(s, uMap)
-	fmt.Println("按下===》", keycode)
-	robotgo.KeyToggle(keycode, "down")
+	// 模拟按键操作
+
+	sInt, _ := strconv.Atoi(s)
+	//uMap := robotgo.Keycode
+	text, _ := getKeyNameText(sInt)
+	//keyname, _ := getKeyByValue(uMap, uint16(sInt))
+	fmt.Println("按下===》", text)
+	robotgo.KeyToggle(text, "down")
 }
 
 func MouseWheel(s string) {
@@ -90,14 +102,13 @@ func subIndex(s string, substr string) int {
 	}
 	return index
 }
-func getKeyByValue(m map[string]int, v int) string {
-	for k, val := range m {
-		if val == v {
-			return k
+func getKeyByValue(uMap map[string]uint16, value uint16) (string, bool) {
+	for key, val := range uMap {
+		if val == value {
+			return key, true
 		}
 	}
-	// 如果没有找到匹配的键，则返回空字符串
-	return ""
+	return "", false
 }
 func main() {
 	// test for MousePress and MouseRelease functions
@@ -107,4 +118,21 @@ func main() {
 
 	// test for MouseMove function
 	MouseMove("X:100 Y:100")
+}
+func getKeyNameText(keyCode int) (string, error) {
+	var buffer [256]byte
+	ret, _, err := syscall.Syscall6(
+		syscall.NewLazyDLL("user32.dll").NewProc("GetKeyNameTextW").Addr(),
+		4,
+		uintptr(keyCode<<16),
+		uintptr(unsafe.Pointer(&buffer)),
+		uintptr(len(buffer)),
+		0,
+		0,
+		0,
+	)
+	if ret > 0 {
+		return string(buffer[:ret]), nil
+	}
+	return "", err
 }
