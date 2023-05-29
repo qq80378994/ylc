@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	IP = "127.0.0.1:1011"
+	IP = "selectbyylc.e3.luyouxia.net:12863"
 )
 
 const (
@@ -96,9 +96,9 @@ func createScreen(socket net.Conn) {
 
 	util.SendHead(1, socket)
 	for {
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Millisecond * 300)
 
-		screen, err := CaptureScreenAsJPEG(30)
+		screen, err := CaptureScreenAsJPEG(20)
 		if err != nil {
 			fmt.Println(err)
 		}

@@ -2,11 +2,9 @@ package util
 
 import (
 	"fmt"
+	"github.com/go-vgo/robotgo"
 	"strconv"
 	"syscall"
-	"unsafe"
-
-	"github.com/go-vgo/robotgo"
 )
 
 // 导入Windows API
@@ -15,21 +13,18 @@ var (
 	getKeyNameTextW = user32DLL.NewProc("GetKeyNameTextW")
 )
 
-func KeyReleased(s string) {
-	fmt.Println("释放===》", s)
-	robotgo.KeyToggle(s, "up")
+func KeyReleased(keycode string) {
+	atoi, _ := strconv.Atoi(keycode)
+	char := fmt.Sprintf("%c", atoi)
+	fmt.Println("按下===》", char)
+	robotgo.KeyToggle(char, "down")
 }
 
-func KeyPress(s string) {
-
-	// 模拟按键操作
-
-	sInt, _ := strconv.Atoi(s)
-	//uMap := robotgo.Keycode
-	text, _ := getKeyNameText(sInt)
-	//keyname, _ := getKeyByValue(uMap, uint16(sInt))
-	fmt.Println("按下===》", text)
-	robotgo.KeyToggle(text, "down")
+func KeyPress(keycode string) {
+	atoi, _ := strconv.Atoi(keycode)
+	char := fmt.Sprintf("%c", atoi)
+	fmt.Println("按下===》", char)
+	robotgo.KeyToggle(char, "down")
 }
 
 func MouseWheel(s string) {
@@ -38,11 +33,8 @@ func MouseWheel(s string) {
 	robotgo.Scroll(0, i)
 }
 func MousePress(s string) {
-	fmt.Println("鼠标点击了===》", s)
-
 	button := getMouseClick(s)
 	robotgo.MouseToggle("down", button)
-	//robotgo.Click(button, true)
 
 }
 
@@ -56,7 +48,6 @@ func MouseRelease(s string) {
 	fmt.Println("鼠标释放了")
 	button := getMouseClick(s)
 	robotgo.MouseToggle("up", button)
-	//robotgo.Click(button, false)
 }
 
 func MouseMove(s string) {
@@ -112,27 +103,5 @@ func getKeyByValue(uMap map[string]uint16, value uint16) (string, bool) {
 }
 func main() {
 	// test for MousePress and MouseRelease functions
-	MousePress("1")
-	robotgo.MilliSleep(100)
-	MouseRelease("1")
-
-	// test for MouseMove function
-	MouseMove("X:100 Y:100")
-}
-func getKeyNameText(keyCode int) (string, error) {
-	var buffer [256]byte
-	ret, _, err := syscall.Syscall6(
-		syscall.NewLazyDLL("user32.dll").NewProc("GetKeyNameTextW").Addr(),
-		4,
-		uintptr(keyCode<<16),
-		uintptr(unsafe.Pointer(&buffer)),
-		uintptr(len(buffer)),
-		0,
-		0,
-		0,
-	)
-	if ret > 0 {
-		return string(buffer[:ret]), nil
-	}
-	return "", err
+	KeyPress("65")
 }
