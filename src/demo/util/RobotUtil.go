@@ -17,7 +17,7 @@ func KeyReleased(keycode string) {
 	atoi, _ := strconv.Atoi(keycode)
 	char := fmt.Sprintf("%c", atoi)
 	fmt.Println("按下===》", char)
-	robotgo.KeyToggle(char, "down")
+	robotgo.KeyToggle(char, "up")
 }
 
 func KeyPress(keycode string) {
