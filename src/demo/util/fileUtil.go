@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 )
 
-// 将程序复制到 C:\ProgramData 目录，并添加到开机自启注册表中
 func CopyToProgramData() error {
 	src, err := os.Executable()
 	if err != nil {

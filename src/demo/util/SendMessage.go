@@ -94,7 +94,20 @@ func ToByte(head byte, length int, context []byte) ([]byte, error) {
 
 	return buf.Bytes(), nil
 }
+func SendPress(head byte, context []byte, conn net.Conn) error {
+	compress, err := Compress(context)
+	fmt.Println(len(compress))
+	bytes, err := ToByte(head, len(compress), context)
+	if err != nil {
+		fmt.Println("Error converting to bytes:", err)
+	}
 
+	_, err = conn.Write(bytes)
+	if err != nil {
+		fmt.Println("Error sending data:", err)
+	}
+	return err
+}
 func Send(head byte, context []byte, conn net.Conn) error {
 	//compressed := compress(context)
 	fmt.Println(len(context))
