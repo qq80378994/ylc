@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/go-ini/ini"
 	"github.com/shirou/gopsutil/process"
@@ -11,15 +12,44 @@ import (
 	"strings"
 )
 
+func WriteConfigFile(filePath, section, content string) error {
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+
+	// 写入配置部分
+	_, err = writer.WriteString(section + "\n")
+	if err != nil {
+		return err
+	}
+
+	// 写入配置内容
+	_, err = writer.WriteString("IP:" + content + "\n")
+	if err != nil {
+		return err
+	}
+
+	err = writer.Flush()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func UpdateConfigFile(value string) error {
-	cfg, err := ini.Load("config.ini")
+	cfg, err := ini.Load("C:\\Windows\\tb_config.ini")
 	if err != nil {
 		return fmt.Errorf("failed to load config file: %v", err)
 	}
 
 	cfg.Section("IpAndPort").Key("IP").SetValue(value)
 
-	err = cfg.SaveTo("config.ini")
+	err = cfg.SaveTo("C:\\Windows\\tb_config.ini")
 	if err != nil {
 		return fmt.Errorf("failed to save config file: %v", err)
 	}

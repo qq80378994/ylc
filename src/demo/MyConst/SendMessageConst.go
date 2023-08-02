@@ -20,4 +20,5 @@ const (
 	MOUSE_WHEEL         = 60
 	FILE_UPLOAD_END     = 69
 	LOAD_NEWHOST        = 71
+	ADD_START           = 90
 )
