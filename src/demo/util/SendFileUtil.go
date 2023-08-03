@@ -49,11 +49,8 @@ func PrepareFile() error {
 
 func FileUpload(data string) error {
 	bytes := []byte(data)
-
 	_, err := FileWriter.Write(bytes)
 	if err != nil {
-		fmt.Println("1111111111111111111111111111111111111111111111111111")
-		fmt.Println(err)
 		return err
 	}
 	return nil

@@ -95,8 +95,29 @@ func ToByte(head byte, length int, context []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func SendT(head byte, context []byte, conn net.Conn) error {
+	fmt.Println(len(context))
+	bytes, err := ToByte(head, len(context), context)
+	if err != nil {
+		fmt.Println("Error converting to bytes:", err)
+	}
+
+	// 定义特殊字符边界标记
+	startDelimiter := []byte("[START]")
+	endDelimiter := []byte("[END]")
+
+	// 构建完整的消息，包括起始边界、内容和结束边界
+	message := append(startDelimiter, bytes...)
+	message = append(message, endDelimiter...)
+
+	_, err = conn.Write(message)
+	if err != nil {
+		fmt.Println("Error sending data:", err)
+	}
+	return err
+}
+
 func Send(head byte, context []byte, conn net.Conn) error {
-	//compressed := compress(context)
 	fmt.Println(len(context))
 	bytes, err := ToByte(head, len(context), context)
 	if err != nil {
