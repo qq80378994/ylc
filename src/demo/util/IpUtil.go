@@ -15,6 +15,7 @@ import (
 func WriteConfigFile(filePath, section, content string) error {
 	file, err := os.Create(filePath)
 	if err != nil {
+		fmt.Println("写入error", err)
 		return err
 	}
 	defer file.Close()
@@ -24,17 +25,20 @@ func WriteConfigFile(filePath, section, content string) error {
 	// 写入配置部分
 	_, err = writer.WriteString(section + "\n")
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 
 	// 写入配置内容
 	_, err = writer.WriteString("IP:" + content + "\n")
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 
 	err = writer.Flush()
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 

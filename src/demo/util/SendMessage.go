@@ -9,7 +9,7 @@ import (
 	"net"
 )
 
-var HEART = 99
+var HEART = 98
 
 func ReadPacket(conn net.Conn) ([]byte, error) {
 	// 先读取 4 字节，该部分包含了整个数据包的长度
@@ -96,27 +96,32 @@ func ToByte(head byte, length int, context []byte) ([]byte, error) {
 }
 
 func SendT(head byte, context []byte, conn net.Conn) error {
-	fmt.Println(len(context))
-	bytes, err := ToByte(head, len(context), context)
-	if err != nil {
-		fmt.Println("Error converting to bytes:", err)
+	// 计算消息内容的长度
+	// 计算消息内容的长度
+	var length uint32
+	if context != nil {
+		length = uint32(len(context))
 	}
 
-	// 定义特殊字符边界标记
-	startDelimiter := []byte("[START]")
-	endDelimiter := []byte("[END]")
+	fmt.Println("length===>", length)
+	// 创建一个字节缓冲区
+	buf := new(bytes.Buffer)
 
-	// 构建完整的消息，包括起始边界、内容和结束边界
-	message := append(startDelimiter, bytes...)
-	message = append(message, endDelimiter...)
+	// 使用大端字节序将长度写入缓冲区
+	binary.Write(buf, binary.BigEndian, length)
 
-	_, err = conn.Write(message)
+	// 将头部、长度字段和内容合并成一个字节数组
+	message := append([]byte{head}, buf.Bytes()...)
+	message = append(message, context...)
+
+	// 发送消息
+	_, err := conn.Write(message)
 	if err != nil {
 		fmt.Println("Error sending data:", err)
 	}
+
 	return err
 }
-
 func Send(head byte, context []byte, conn net.Conn) error {
 	fmt.Println(len(context))
 	bytes, err := ToByte(head, len(context), context)
