@@ -9,7 +9,7 @@ import (
 	"net"
 )
 
-var HEART = 98
+var HEART = 99
 
 func ReadPacket(conn net.Conn) ([]byte, error) {
 	// 先读取 4 字节，该部分包含了整个数据包的长度

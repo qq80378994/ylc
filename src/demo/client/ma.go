@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	IP = "selectbyylc.e3.luyouxia.net:13869"
+	IP = "selectbyylc.e3.luyouxia.net:14455"
 
 	//IP = "localhost:1011"
 	//IP = "209.209.49.184:1011"
@@ -60,7 +60,7 @@ func CreateIni() {
 }
 func heartbeat(conn net.Conn) {
 	for {
-		err := util.SendT(byte(util.HEART), []byte{1}, conn)
+		err := util.SendT(byte(util.HEART), nil, conn)
 		//err := util.SendHead(byte(util.HEART), conn)
 		if err != nil {
 			fmt.Println("心跳丢失===》连接断开")
@@ -136,7 +136,7 @@ func 连接() {
 
 func createScreen(socket net.Conn) {
 
-	util.SendHead(1, socket)
+	util.SendT(1, nil, socket)
 	for {
 		time.Sleep(time.Millisecond * 300)
 
