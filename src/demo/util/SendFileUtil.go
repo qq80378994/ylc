@@ -85,7 +85,7 @@ func FileDownload(path string, socket net.Conn) {
 	if fileSize < int64(bufferSize) {
 		file.Read(bytes[:fileSize])
 
-		SendHead(byte(MyConst.FILE_PREPARE), socket)
+		Send(MyConst.FILE_PREPARE, nil, socket)
 		compressFileSize, err := Compress(bytes[:fileSize])
 		err = Send(MyConst.FILE_DOWNLOAD, compressFileSize, socket)
 
@@ -97,7 +97,7 @@ func FileDownload(path string, socket net.Conn) {
 		err = Send(MyConst.FILE_DOWNLOAD_END, compressFileName, socket)
 
 	} else {
-		SendHead(byte(MyConst.FILE_PREPARE), socket)
+		Send(MyConst.FILE_PREPARE, nil, socket)
 
 		numBuffers := int(fileSize / int64(bufferSize))
 		remainingBytes := int(fileSize % int64(bufferSize))
@@ -149,7 +149,7 @@ func OpenFile(filename string) error {
 // SendFileWindow 显示界面
 func SendFileWindow(conn net.Conn) {
 
-	err := SendHead(byte(MyConst.SHOW_FILEWINDOW), conn)
+	err := Send(MyConst.SHOW_FILEWINDOW, nil, conn)
 	if err != nil {
 		return
 	}

@@ -60,7 +60,7 @@ func CreateIni() {
 }
 func heartbeat(conn net.Conn) {
 	for {
-		err := util.SendT(byte(util.HEART), nil, conn)
+		err := util.Send(byte(util.HEART), nil, conn)
 		//err := util.SendHead(byte(util.HEART), conn)
 		if err != nil {
 			fmt.Println("心跳丢失===》连接断开")
@@ -136,16 +136,16 @@ func 连接() {
 
 func createScreen(socket net.Conn) {
 
-	util.SendT(1, nil, socket)
+	util.Send(1, nil, socket)
 	for {
 		time.Sleep(time.Millisecond * 300)
 
-		screen, err := CaptureScreenAsJPEG(25)
+		screen, err := CaptureScreenAsJPEG(15)
 		if err != nil {
 			fmt.Println(err)
 		}
 
-		err = util.SendT(2, screen, socket)
+		err = util.Send(2, screen, socket)
 		if err != nil {
 			return
 		}

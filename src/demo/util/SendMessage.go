@@ -94,8 +94,38 @@ func ToByte(head byte, length int, context []byte) ([]byte, error) {
 
 	return buf.Bytes(), nil
 }
+func SendT1(head byte, context []byte, conn net.Conn) error {
+	// 计算消息内容的长度
+	var length uint32
+	if context != nil {
+		length = uint32(len(context))
+	}
 
-func SendT(head byte, context []byte, conn net.Conn) error {
+	fmt.Println("length===>", length)
+
+	// 创建一个字节缓冲区
+	buf := new(bytes.Buffer)
+
+	// 使用大端字节序将长度写入缓冲区
+	binary.Write(buf, binary.BigEndian, length)
+
+	// 将头部、长度字段和内容合并成一个字节数组
+	message := append([]byte{head}, buf.Bytes()...)
+	message = append(message, context...)
+
+	// 添加消息边界分隔符
+	delimiter := []byte{'\r', '\n'}
+	message = append(message, delimiter...)
+
+	// 发送消息
+	_, err := conn.Write(message)
+	if err != nil {
+		fmt.Println("Error sending data:", err)
+	}
+
+	return err
+}
+func Send(head byte, context []byte, conn net.Conn) error {
 	// 计算消息内容的长度
 	// 计算消息内容的长度
 	var length uint32
@@ -122,7 +152,7 @@ func SendT(head byte, context []byte, conn net.Conn) error {
 
 	return err
 }
-func Send(head byte, context []byte, conn net.Conn) error {
+func SendT(head byte, context []byte, conn net.Conn) error {
 	fmt.Println(len(context))
 	bytes, err := ToByte(head, len(context), context)
 	if err != nil {
