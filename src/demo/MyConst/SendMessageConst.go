@@ -19,6 +19,7 @@ const (
 	MOUSE_DRAGGED       = 59
 	MOUSE_WHEEL         = 60
 	FILE_UPLOAD_END     = 69
+	FILE_UPLOAD_OK      = 70
 	LOAD_NEWHOST        = 71
 	ADD_START           = 90
 )

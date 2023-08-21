@@ -24,7 +24,7 @@ var file *os.File // 声明一个全局变量来存储文件对象
 func CloseFile(socket net.Conn, context string) {
 	file.Close()
 	compress, _ := Compress([]byte(context))
-	Send(MyConst.FILE_UPLOAD_END, compress, socket)
+	Send(MyConst.FILE_UPLOAD_OK, compress, socket)
 }
 
 // CreateFile 创建文件
@@ -212,10 +212,8 @@ func FileQuery(socket net.Conn, path string) {
 
 		var info string
 		if fileInfo.IsDir() {
-			fmt.Println("=====131")
 			info = fmt.Sprintf("Directory|%s|%s| ", f.Name(), fileInfo.ModTime().Format(time.RFC3339))
 		} else {
-			fmt.Println("=====132")
 			info = fmt.Sprintf("File|%s|%s|%s", f.Name(), fileInfo.ModTime().Format(time.RFC3339), getFileSizeCompany(fileInfo.Size()))
 		}
 		compress, err := Compress([]byte(info))
