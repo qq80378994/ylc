@@ -45,7 +45,7 @@ func ReceiveContext(dataInputStream *bufio.Reader, len int) ([]byte, error) {
 	// 获取内容
 	b, err := Decompression(bytes)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("请求内容异常", err)
 		return nil, err
 	}
 	return b, nil
@@ -55,7 +55,7 @@ func ReceiveLength(dataInputStream *bufio.Reader) int {
 	_, err := dataInputStream.Read(bytes)
 	if err != nil {
 
-		fmt.Println(err)
+		fmt.Println("请求长度异常", err)
 		// 处理异常
 	}
 	length := ByteToInt(bytes)
@@ -65,8 +65,7 @@ func ReceiveHead(dataInputStream *bufio.Reader) (byte, error) {
 	bytes := make([]byte, 1)
 	_, err := dataInputStream.Read(bytes)
 	if err != nil {
-
-		fmt.Println(err)
+		fmt.Println("请求头异常", err)
 		// 处理异常
 	}
 	return bytes[0], err
@@ -103,7 +102,7 @@ func Send(head byte, context []byte, conn net.Conn) error {
 		length = uint32(len(context))
 	}
 
-	fmt.Println("length===>", length)
+	//	fmt.Println("length===>", length)
 	// 创建一个字节缓冲区
 	buf := new(bytes.Buffer)
 
