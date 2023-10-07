@@ -1,0 +1,2 @@
+需要下载gcc 否则会有event跟bitmap报错
+gcc下载后还需要go env -w CGO_ENABLED=1这样才行
