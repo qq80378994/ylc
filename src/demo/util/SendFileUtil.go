@@ -39,6 +39,7 @@ func CreateFile(filename string) error {
 }
 
 func PrepareFile() error {
+	fmt.Println("file:", file.Name())
 	file, err := os.Create(file.Name())
 	if err != nil {
 		return err

